@@ -1,0 +1,670 @@
+
+---
+title: "Simulation"
+author: "Naij Taylor"
+date: "2024-06-20"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###Making Function to generate strata
+
+```{r}
+#4000-2000(XXL)  1999-1000(XL) 999-500(L) 499-100(M) 99-50(S) 49-10(XS) 10-0(XXS)
+XXL=0;XL=0;L=0;M=0;S=0;XS=0;XXS=0;
+strata.gen <- function(XXL=0,XL=0,L=0,M=0,S=0,XS=0,XXS=0)
+{
+#Frame where we add stata
+base.frame <- data.frame(strata = c())
+if(XXL !=0){
+##Generate Strata
+#XXL Gen
+for (val in 1:XXL)
+{
+  #genrates number for how much a single XXL strata should apper (4000-2000)
+  s.amt <- sample(10000:20000,1)
+  #Inseting XXL strat to strata column
+  for(num in 1:s.amt)
+    {
+    bind.frame <- data.frame(strata = c(gsub(" ","",paste('XXL',val))))
+    base.frame <- rbind(base.frame,bind.frame)
+    }
+  
+}
+}
+if(XL !=0){
+#XL Gen
+for (val in 1:XL)
+{
+  #genrates number for how much a single XL strata should apper (1999-1000)
+  s.amt <- sample(5000:9999,1)
+  #Inseting XL strat to strata column
+  for(num in 1:s.amt)
+    {
+    bind.frame <- data.frame(strata = c(gsub(" ","",paste('XL',val))))
+    base.frame <- rbind(base.frame,bind.frame)
+    }
+  
+}
+}
+if(L !=0){
+#L Gen
+for (val in 1:L)
+{
+  #genrates number for how much a single L strata should apper (999-500)
+  s.amt <- sample(2500:4999,1)
+  #Inseting L strat to strata column
+  for(num in 1:s.amt)
+    {
+    bind.frame <- data.frame(strata = c(gsub(" ","",paste('L',val))))
+    base.frame <- rbind(base.frame,bind.frame)
+    }
+  
+}
+}
+if(M !=0){
+#M Gen
+for (val in 1:M)
+{
+  #genrates number for how much a single M strata should apper (499-100)
+  s.amt <- sample(1250:2499,1)
+  #Inseting M strat to strata column
+  for(num in 1:s.amt)
+    {
+    bind.frame <- data.frame(strata = c(gsub(" ","",paste('M',val))))
+    base.frame <- rbind(base.frame,bind.frame)
+    }
+  
+}
+}
+if(S !=0){
+#S Gen
+for (val in 1:S)
+{
+  #genrates number for how much a single S strata should apper (99-50)
+  s.amt <- sample(625:1249,1)
+  #Inseting S strat to strata column
+  for(num in 1:s.amt)
+    {
+    bind.frame <- data.frame(strata = c(gsub(" ","",paste('S',val))))
+    base.frame <- rbind(base.frame,bind.frame)
+    }
+  
+}
+}
+if(XS !=0){
+#XS Gen
+for (val in 1:XS)
+{
+  #genrates number for how much a single XS strata should apper (49-10)
+  s.amt <- sample(310:624,1)
+  #Inseting XS strat to strata column
+  for(num in 1:s.amt)
+    {
+    bind.frame <- data.frame(strata = c(gsub(" ","",paste('XS',val))))
+    base.frame <- rbind(base.frame,bind.frame)
+    }
+  
+}
+}
+if(XXS !=0){
+#XXS Gen
+for (val in 1:XXS)
+{
+  #genrates number for how much a single XXS strata should apper (10-1)
+  s.amt <- sample(1:9,1)
+  #Inseting XXS strat to strata column
+  for(num in 1:s.amt)
+    {
+    bind.frame <- data.frame(strata = c(gsub(" ","",paste('XXS',val))))
+    base.frame <- rbind(base.frame,bind.frame)
+    }
+  
+}
+}
+return(base.frame)
+}
+```
+
+###creating clean.gen function
+
+```{r}
+clean.gen <- function (cont,bi,data)
+{
+x.amt <- cont
+z.amt <- bi
+strata.len<-length(data[,colnames(data)[1]])
+#base data frame
+base.frame2 <- data.frame(t<-sample(0,strata.len,replace = TRUE))
+base.frame2<-base.frame2[-1]
+
+###Generating data
+#creating x
+for (val in 1:x.amt)
+{
+  #Mean
+  m <- sample(1:20,1)
+  #distribution
+  raw <- rnorm(500,1,.5)
+  raw <- raw[which(raw>=.5 & raw<=1.5)]
+  dis <- sample(raw,1)
+  #creating x variable
+  x <- rnorm(strata.len,m,(.35*m*dis))
+  base.frame2[,gsub(" ","",paste("x",val))] <- x
+}
+#creating z
+for (val in 1:z.amt)
+{
+  #generating random p
+  raw <- rnorm(500,.5,.4)
+  raw <- raw[which(raw>=.1 & raw<=.9)]
+  #creating x variable
+  z <- rbinom(strata.len,1,raw)
+  base.frame2[,gsub(" ","",paste("z",val))] <- z
+}
+return(base.frame2)
+}
+```
+
+### Error prone data generation function
+
+```{r}
+error.gen <- function(input.frame)
+{
+columns <- colnames(input.frame)
+N <- length(input.frame$strata)
+
+for (val in columns) 
+{
+  if (grepl("x", val))
+  {
+    xs <- rnorm(N,input.frame[,val],mean(input.frame[,val])*.25)
+    input.frame[,gsub("x","xs",val)] <- xs
+  }
+}
+return(input.frame)
+}
+```
+
+###B1 gen function
+
+```{R}
+b1.gen <- function(data, default = FALSE)
+{
+ 
+  ##genrating b1 values
+  #making formula
+  col.names <- colnames(data) 
+  #getting the correct cols
+  col.cols <- which((grepl("x", col.names) | grepl("z", col.names)) & !grepl("b1", col.names) & !grepl("xs", x =   col.names)) ; col.cols <- col.names[col.cols];
+  #misc vars
+  b1.vector <- c()
+  target <- 3/length(col.cols)
+  #loop to make b1
+  for (val in 1:length(col.cols))
+  {
+    b1.vector[val] <- target/ mean(test.frame[,col.cols[val]])
+    if (val == length(col.cols))
+    {
+      b1.vector[val] <-  b1.vector[val]/2
+    }
+  }
+  ##making b1 columns
+  if (default == TRUE)
+  {
+    var.col <- colnames(data)
+    for(val in var.col)
+    {
+      if ((grepl("x", val) | grepl("z", val)) & !grepl("xs", val) )
+      {
+        data[,gsub(" ","",paste("b1_",val))] <- sample(1,length(data[,val]), replace = TRUE)
+      }
+        
+    }
+  }
+  if (default == FALSE)
+  {
+    b1.index <- 1
+    var.col <- colnames(data)
+    for(val in var.col)
+    {
+      if ((grepl("x", val) | grepl("z", val)) & !grepl("xs", val) )
+      {
+        data[,gsub(" ","",paste("b1_",val))] <- rep(b1.vector[b1.index],length(data[,val]))
+        b1.index <- b1.index + 1 
+      }
+        
+    }
+  }
+  return(data)
+}
+
+```
+
+###Outvome Var function
+
+```{r}
+outcome.gen <- function (data,intercept)
+{
+  #Making var that has the  col names of the vars and b1 (not including error prone) 
+  x.vars <- which(!grepl("xs",colnames(data))); x.vars <- colnames(data)[x.vars];
+  x.vars <- x.vars[-1]
+  #formula that will hold sum
+  formula <- ""
+  #making it so column names are in var form
+  for (val in 1:length(x.vars))
+  {
+    x.vars[val] <- gsub(" ","",paste("data$",x.vars[val]))
+  }
+  
+  #Creating formula
+  for (val in 1:(length(x.vars)/2))
+  {
+    if (val == 1)
+    {
+      formula <- paste(intercept,x.vars[val], sep = "+")
+      formula <- paste(formula,x.vars[val+(length(x.vars)/2)], sep ="*")
+    }
+    else 
+    {
+      formula <- paste(formula,x.vars[val], sep = "+")
+      formula <- paste(formula,x.vars[val+(length(x.vars)/2)], sep ="*")
+    }
+  }
+  #Calculating Probability of binary outcome var
+  result.f <- parse(text = formula);result.f <- eval(result.f);
+  result.p <- (exp(result.f))/(1+exp(result.f))
+  data[,"outcome"] <- rbinom(length(data[,colnames(data)[1]]),1,result.p)
+  return(data)
+    
+}
+```
+
+
+### Sampling function
+
+```{r}
+samp.gen <- function(data,settings)
+{
+  #4000-2000(XXL)  1999-1000(XL) 999-500(L) 499-100(M) 99-50(S) 49-10(XS) 10-0(XXS)
+  ##code for function testing
+    #data <- 0
+    #settings <- list(c(94,.1),c(94,.1),c(62,.1),c(62,.1),c(62,.1),c(62,.1),c(31,.1),c(31,.1))
+  #Creating subset col
+  data[,"V"] <- rep(0,length(colnames(data)[1]))
+  
+  #Holds strata values
+  strata.holder <- c()
+  #Gets all unique strata values from strata col
+  for (val in data[,colnames(data)[1]] )
+  {
+    if (!(val %in% strata.holder))
+    {
+      strata.holder <- c(strata.holder,val)
+    }
+  }
+  
+  #Picking samples for each strata
+  for (val in 1:length(strata.holder))
+  {
+    #getting rows of 0 and 1 per strata
+    rows.1 <- which((data[,colnames(data)[1]] == strata.holder[val]) & (data[,"outcome"] == 1) )
+    rows.0 <- which((data[,colnames(data)[1]] == strata.holder[val]) & (data[,"outcome"] == 0) )
+    #changing row holders to be the sampled amount
+    rows.1 <- sample(rows.1,round(settings[[val]][1]*settings[[val]][2]))
+    rows.0 <- sample(rows.0,round(settings[[val]][1]*(1-settings[[val]][2])))
+    #Setting sampled row's V value to 1
+    data[c(rows.1,rows.0),"V"] <- 1
+  }
+ 
+  return(data)
+}
+
+```
+
+###Making known weights
+
+```{r}
+w_des.gen <- function(data,settings)
+{
+
+##setup stuff
+#test.frame <- read.csv("data.csv")
+#test.frame <- test.frame[,-1]
+#var for strata settings
+strata.settings <- setting
+
+##Getiing strata values
+#var to hold unique values
+strata.val <- c()
+#loop to get unique strata values
+for (val in data$strata)
+{
+  if (!(val %in% strata.val)) 
+  {
+    strata.val <- c(strata.val,val)
+  }
+}
+
+##making design weight var
+for (val in 1:length(strata.settings))
+{
+  #getting total of specific strata
+  strata.len <- length(which(data$strata == strata.val[val]))
+  #getting amount of each outcomes to be be chosen based off of settings for strata
+  amt.0 <- round(strata.settings[[val]][1]*(1-strata.settings[[val]][2]))
+  amt.1 <- round(strata.settings[[val]][1]*strata.settings[[val]][2])
+  #Getting ratio of different outcomes
+  ipw.0 <- 1/(amt.0/length(which((data[,"strata"] == strata.val[val]) & (data[,"outcome"] == 0) )))
+  ipw.1 <- 1/(amt.1/length(which((data[,"strata"] == strata.val[val]) & (data[,"outcome"] == 1) )))
+  
+  ##Inputting column value for design weight
+  #creating var to hold rows that have specified strata
+  strata.row <- which(data$strata == strata.val[val])
+  #loop to input value for design weight
+  for (xrow in strata.row)
+  {
+    if(data[xrow,"outcome"] == 0)
+    {
+      data[xrow,"w_des"] <- ipw.0
+    }
+    else
+    {
+      data[xrow,"w_des"] <- ipw.1
+    }
+  }
+    
+}
+return(data)
+}
+```
+
+###Making est weights?
+
+```{r}
+w_est.gen <- function(data.1)
+{
+  est.model <- glm(V ~ strata, data = data.1, family = "binomial")
+  data.1[,"w_est"] <- 1/est.model$fitted.values
+  return(data.1)
+}
+
+
+```
+
+###influence function stuff
+
+```{r}
+w_inf.gen <- function(data.1)
+{
+##making formula
+col.names <- colnames(data.1) 
+#getting the correct cols
+inf.cols <- which((grepl("xs", col.names) | grepl("z", col.names)) & !grepl("b1", col.names) ) ; inf.cols <- col.names[inf.cols];
+formula.inf <- paste0("outcome ~ ",inf.cols[1])
+#Making formula for regression
+for (val in 2:length(inf.cols))
+{
+  formula.inf <- paste(formula.inf,inf.cols[val], sep = "+")
+}
+
+##making infkuence function
+#model to retrieve naive influence functions (IFs)
+model.inf = glm(formula.inf, data= data.1, family = binomial)
+# Tong's function to retrieve IFs
+inf.fun <- function(fit) {
+  dm <- model.matrix(fit)
+  Ihat <- (t(dm) %*% (dm * fit$fitted.values * (1 - fit$fitted.values))) / nrow(dm)
+  ## influence function
+  infl <- (dm * resid(fit, type = "response")) %*% solve(Ihat)
+  infl
+}
+# Removing intercept influence function u[dating data and making infl equation
+naiveInfl3 =  inf.fun(model.inf)[,-1]
+colnames(naiveInfl3)=paste("INF", 1:ncol(naiveInfl3), sep="")
+
+d14=cbind(data.1,naiveInfl3) 
+
+infs_eq1 <- as.formula(paste('~', paste0('INF', 1:ncol(naiveInfl3), collapse = ' + ')))
+
+##making formula with inluence function
+#formula
+formula.inf2 <- paste0('strata*INF', 1:ncol(naiveInfl3), collapse = ' + ');formula.inf2 <- paste0("V~strata+",formula.inf2);
+#model
+inf.model <- glm(formula.inf2, data = d14, family = "binomial")
+d14[,"w_inf"] <- 1/inf.model$fitted.values 
+d14[,"formula"] <- rep(formula.inf2, times = nrow(d14))
+return(d14)
+}
+
+```
+#testing for inf formula
+```{r}
+setwd("C:/Users/naijt/OneDrive/Documents/R code")
+data <- read.csv("data.csv")
+data <- w_inf.gen(data)
+
+```
+
+###Code for data generation
+
+```{r}
+##generating strata
+test.frame <- strata.gen(XXL=1,XL=1,L=1,M=3,S=2)
+#generating clean data
+test.frame <- cbind(test.frame,clean.gen(3,1,test.frame))
+##generating error prone version of data
+test.frame <- error.gen(test.frame)
+##adding b1
+#looking at mean of col
+test.frame <- b1.gen(test.frame, default = FALSE)
+##outcome
+test.frame <- outcome.gen(test.frame,-5)
+#table(test.frame$outcome)
+##sampling
+#test
+setting <- list(c(94,.1),c(94,.1),c(62,.1),c(62,.1),c(62,.1),c(62,.1),c(31,.1),c(31,.1))
+test.frame <- samp.gen(test.frame,setting)
+#table(test.frame$V)
+##design weights
+test.frame <- w_des.gen(test.frame,setting)
+##estimated weights 
+test.frame <- w_est.gen(test.frame)
+##inf weights 
+test.frame <- w_inf.gen(test.frame)
+```
+
+###Models
+
+```{r}
+library(survey)
+col.names <- colnames(test.frame) 
+##Model1 using all error prone data
+#getting the correct cols
+model1.cols <- which((grepl("xs", col.names) | grepl("z", col.names)) & !grepl("b1", col.names) ) ; model1.cols <- col.names[model1.cols];
+formula <- paste0("outcome ~ ",model1.cols[1])
+#Making formula for regression
+for (val in 2:length(model1.cols))
+{
+  formula <- paste(formula,model1.cols[val], sep = "+")
+}
+model1 <- glm(formula, data=test.frame,family = "binomial")
+summary(model1)
+##Model2 using cleaned with design weights
+#getting the correct cols and making formula var
+model2.cols <- which((grepl("x", col.names) | grepl("z", col.names)) & !grepl("b1", col.names) & !grepl("xs", col.names)) ; model2.cols <- col.names[model2.cols];
+formula <- paste0("outcome ~ ",model2.cols[1])
+#Making formula for regression
+for (val in 2:length(model2.cols))
+{
+  formula <- paste(formula,model2.cols[val], sep = "+")
+}
+#Model Finalization
+designM2 = twophase(id=list(~1,~1),weights=list(~1,~w_des),subset=~V==1, data=test.frame,method="approx")
+model2 = svyglm(formula, design=designM2, family = quasibinomial())
+summary(model2)
+##Model3 using cleaned with est weights
+#Model Finalization
+designM3 = twophase(id=list(~1,~1),weights=list(~1,~w_est),subset=~V==1, data=test.frame,method="approx")
+model3 = svyglm(formula, design=designM3, family = quasibinomial())
+summary(model3)
+##Model4 using cleaned with inf est weights
+designM4 = twophase(id=list(~1,~1),weights=list(~1,~w_inf),subset=~V==1, data=test.frame,method="approx")
+model4 = svyglm(formula, design=designM4, family = quasibinomial())
+summary(model4)
+
+```
+
+###Simulation
+
+```{r echo=TRUE, message=TRUE, warning=TRUE}
+library(survey)
+###Estomator tracking var
+est.data <- data.frame(
+  bx1<-rep(0, times = 100), bx2<-rep(0, times = 100), bx3<-rep(0, times = 100), bz1<-rep(0, times = 100),
+  
+  mod1_est.bx1<-rep(0, times = 100), mod1_est.bx2<-rep(0, times = 100), mod1_est.bx3<-rep(0, times = 100), mod1_est.bz1<-rep(0, times = 100),
+
+  mod2_est.bx1<-rep(0, times = 100), mod2_est.bx2<-rep(0, times = 100), mod2_est.bx3<-rep(0, times = 100), mod2_est.bz1<-rep(0, times = 100),
+
+  mod3_est.bx1<-rep(0, times = 100), mod3_est.bx3<-rep(0, times = 100), mod3_est.bx3<-rep(0, times = 100), mod3_est.bz1<-rep(0, times = 100), 
+  
+  mod4_est.bx1<-rep(0, times = 100), mod4_est.bx2<-rep(0, times = 100), mod4_est.bx3<-rep(0, times = 100), mod4_est.bz1<-rep(0, times = 100),
+  
+  mod5_est.bx1<-rep(0, times = 100), mod5_est.bx2<-rep(0, times = 100), mod5_est.bx3<-rep(0, times = 100), mod5_est.bz1<-rep(0, times = 100)
+)
+
+###For Loop for simulation
+for (iter in  1:100)
+{
+  ###Data Set generation
+  ##generating strata
+  test.frame <- strata.gen(XXL=2,XL=4,L=4,M=0,S=0)
+  #generating clean data
+  test.frame <- cbind(test.frame,clean.gen(3,1,test.frame))
+  ##generating error prone version of data
+  test.frame <- error.gen(test.frame)
+  ##adding b1
+  #looking at mean of col
+  test.frame <- b1.gen(test.frame, default = FALSE)
+  ##outcome
+  test.frame <- outcome.gen(test.frame,-5)
+  #table(test.frame$outcome)
+  ##sampling
+  #test
+  setting <- list(c(250,.1),c(250,.1),c(87,.1),c(87,.1),c(87,.1),c(87,.1),c(38,.1),c(38,.1),c(38,.1),c(38,.1))
+  
+  test.frame <- samp.gen(test.frame,setting)
+  #table(test.frame$V)
+  ##design weights
+  test.frame <- w_des.gen(test.frame,setting)
+  ##estimated weights 
+  test.frame <- w_est.gen(test.frame)
+  ##inf weights 
+  test.frame <- w_inf.gen(test.frame)
+  
+  
+  ###Modeling
+  col.names <- colnames(test.frame) 
+  ##Model1 using all error prone data
+  #getting the correct cols
+  model1.cols <- which((grepl("xs", col.names) | grepl("z", col.names)) & !grepl("b1", col.names) ) ; model1.cols <- col.names[model1.cols];
+  formula <- paste0("outcome ~ ",model1.cols[1])
+  #Making formula for regression
+  for (val in 2:length(model1.cols))
+  {
+  formula <- paste(formula,model1.cols[val], sep = "+")
+  }
+  model1 <- glm(formula, data=test.frame,family = "binomial")
+  ##Model2 using cleaned with design weights
+  #getting the correct cols and making formula var
+  model2.cols <- which((grepl("x", col.names) | grepl("z", col.names)) & !grepl("b1", col.names) & !grepl("xs", col.names)) ; model2.cols <- col.names[model2.cols];
+  formula <- paste0("outcome ~ ",model2.cols[1])
+  #Making formula for regression
+  for (val in 2:length(model2.cols))
+  {
+  formula <- paste(formula,model2.cols[val], sep = "+")
+  }
+  #Model Finalization
+  designM2 = twophase(id=list(~1,~1),weights=list(~1,~w_des),subset=~V==1, data=test.frame,method="approx")
+  model2 = svyglm(formula, design=designM2, family = quasibinomial())
+  ##Model3 using cleaned with est weights
+  #Model Finalization
+  designM3 = twophase(id=list(~1,~1),weights=list(~1,~w_est),subset=~V==1, data=test.frame,method="approx")
+  model3 = svyglm(formula, design=designM3, family = quasibinomial())
+  ##Model4 using cleaned with inf est weights
+  designM4 = twophase(id=list(~1,~1),weights=list(~1,~w_inf),subset=~V==1, data=test.frame,method="approx")
+  model4 = svyglm(formula, design=designM4, family = quasibinomial())
+  ##Model5 raking using cleaned with inf est weights
+  designM5 = twophase(id=list(~1,~1),weights=list(~1,~w_est),subset=~V==1, data=test.frame,method="approx")
+  Ninflcal4<-survey::calibrate(designM5,formula=as.formula(test.frame[2,"formula"]),phase=2,calfun="raking")
+  model5 = svyglm(formula, design=Ninflcal4, family = quasibinomial())
+  
+  ###Model Data collection
+  ##actual b1
+  #x1
+  est.data[iter,'bx1'] <- test.frame[1,'b1_x1']
+  #x2
+  est.data[iter,'bx2'] <- test.frame[1,'b1_x2']
+  #x3
+  est.data[iter,'bx3'] <- test.frame[1,'b1_x3']
+  #z1
+  est.data[iter,'bz1'] <- test.frame[1,'b1_z1']
+  ##estimated b1 
+  #model 1
+  # x1
+  est.data[iter,'mod1_est.bx1'] <- model1$coefficients[[2]][1]
+  # x2
+  est.data[iter,'mod1_est.bx2'] <- model1$coefficients[[3]][1]
+  # x3
+  est.data[iter,'mod1_est.bx3'] <- model1$coefficients[[4]][1]
+  # z1
+  est.data[iter,'mod1_est.bz1'] <- model1$coefficients[[5]][1]
+  #model 2
+  # x1
+  est.data[iter,'mod2_est.bx1'] <- model2$coefficients[[2]][1]
+  # x2
+  est.data[iter,'mod2_est.bx2'] <- model2$coefficients[[3]][1]
+  # x3
+  est.data[iter,'mod2_est.bx3'] <- model2$coefficients[[4]][1]
+  # z1
+  est.data[iter,'mod2_est.bz1'] <- model2$coefficients[[5]][1]
+  #model 3
+  # x1
+  est.data[iter,'mod3_est.bx1'] <- model3$coefficients[[2]][1]
+  # x2
+  est.data[iter,'mod3_est.bx2'] <- model3$coefficients[[3]][1]
+  # x3
+  est.data[iter,'mod3_est.bx3'] <- model3$coefficients[[4]][1]
+  # z1
+  est.data[iter,'mod3_est.bz1'] <- model3$coefficients[[5]][1]
+  #model 4
+  # x1
+  est.data[iter,'mod4_est.bx1'] <- model4$coefficients[[2]][1]
+  # x2
+  est.data[iter,'mod4_est.bx2'] <- model4$coefficients[[3]][1]
+  # x3
+  est.data[iter,'mod4_est.bx3'] <- model4$coefficients[[4]][1]
+  # z1
+  est.data[iter,'mod4_est.bz1'] <- model4$coefficients[[5]][1]
+  #model 5
+  # x1
+  est.data[iter,'mod5_est.bx1'] <- model5$coefficients[[2]][1]
+  # x2
+  est.data[iter,'mod5_est.bx2'] <- model5$coefficients[[3]][1]
+  # x3
+  est.data[iter,'mod5_est.bx3'] <- model5$coefficients[[4]][1]
+  # z1
+  est.data[iter,'mod5_est.bz1'] <- model5$coefficients[[5]][1]
+  
+  #Loading print
+  print(paste0(iter,"%"))
+}
+#est.data <- est.data[,c(-1,-2,-3,-4,-5)]
+write.csv(est.data,paste0(getwd(),"/High_strata.csv"))
+```
